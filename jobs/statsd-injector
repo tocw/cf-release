@@ -1,1 +1,1 @@
-../src/loggregator/jobs/statsd-injector
+../src/statsd-injector-release/jobs/statsd-injector/

@@ -183,10 +183,6 @@ loggregator-blobs/trafficcontroller.xz:
   object_id: a8cc546a-dc26-40e0-a9f0-0a80c340aa76
   sha: da646b121595360afd2905205f8073369daefd8f
   size: 3403076
-loggregator-blobs/statsd-injector.xz:
-  object_id: dcc3d1e0-2d2b-4b2e-85a9-5bdae3667edf
-  sha: 28ce173b9cc8efb66e2b6e836d9c3f195138e051
-  size: 1067492
 loggregator-blobs/metron.exe:
   object_id: 7d61b7bb-aa86-4255-9474-b36f94ecc72c
   sha: 048fac2dd83aea468888038ec0d5a59f4b70b902
@@ -203,3 +199,7 @@ java-buildpack/java-buildpack-offline-v3.11.zip:
   object_id: 6e0e442b-967d-463d-a504-9fed5d3e6b72
   sha: 8269b2611736d16ae35dbc3b2a7d839c5f2a448b
   size: 256031996
+statsd-injector-blobs/statsd-injector.xz:
+  object_id: eb0d3175-6334-46ee-9533-38b415115c91
+  sha: 01c02fa8a6204635643974df50f90ecfc804b858
+  size: 1089192
