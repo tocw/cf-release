@@ -1,14 +1,13 @@
 meta:
   zones:
     z1: (( properties.template_only.aws.availability_zone ))
-    z2: (( properties.template_only.aws.availability_zone2 ))
 
   fog_config:
     blobstore_timeout: 5
     provider: AWS
     aws_access_key_id: (( properties.template_only.aws.access_key_id ))
     aws_secret_access_key: (( properties.template_only.aws.secret_access_key ))
-    region: us-east-1
+    region: us-west-1
 
   stemcell: (( merge || .meta.default_stemcell ))
 
@@ -66,14 +65,6 @@ resource_pools:
         type: gp2
       availability_zone: (( meta.zones.z1 ))
 
-  - name: small_z2
-    cloud_properties:
-      instance_type: m3.medium
-      ephemeral_disk:
-        size: 10_240
-        type: gp2
-      availability_zone: (( meta.zones.z2 ))
-
   - name: medium_z1
     cloud_properties:
       instance_type: m3.medium
@@ -82,13 +73,6 @@ resource_pools:
         type: gp2
       availability_zone: (( meta.zones.z1 ))
 
-  - name: medium_z2
-    cloud_properties:
-      instance_type: m3.medium
-      ephemeral_disk:
-        size: 10_240
-        type: gp2
-      availability_zone: (( meta.zones.z2 ))
 
   - name: large_z1
     cloud_properties:
@@ -98,13 +82,6 @@ resource_pools:
         type: gp2
       availability_zone: (( meta.zones.z1 ))
 
-  - name: large_z2
-    cloud_properties:
-      instance_type: m3.large
-      ephemeral_disk:
-        size: 65_536
-        type: gp2
-      availability_zone: (( meta.zones.z2 ))
 
   - name: runner_z1
     cloud_properties:
@@ -114,14 +91,6 @@ resource_pools:
         type: gp2
       availability_zone: (( meta.zones.z1 ))
 
-  - name: runner_z2
-    cloud_properties:
-      instance_type: m3.large
-      ephemeral_disk:
-        size: 102_400
-        type: gp2
-      availability_zone: (( meta.zones.z2 ))
-
   - name: router_z1
     cloud_properties:
       instance_type: c3.large
@@ -129,16 +98,6 @@ resource_pools:
         size: 10_240
         type: gp2
       availability_zone: (( meta.zones.z1 ))
-      elbs: (( merge || ["cfrouter"] ))
-      <<: (( merge ))
-
-  - name: router_z2
-    cloud_properties:
-      instance_type: c3.large
-      ephemeral_disk:
-        size: 10_240
-        type: gp2
-      availability_zone: (( meta.zones.z2 ))
       elbs: (( merge || ["cfrouter"] ))
       <<: (( merge ))
 
@@ -163,22 +122,10 @@ jobs:
       - name: cf1
         static_ips: (( static_ips(1) ))
 
-  - name: nats_z2
-    instances: 1
-    networks:
-      - name: cf2
-        static_ips: (( static_ips(1) ))
-
   - name: router_z1
     instances: 1
     networks:
       - name: cf1
-        static_ips: ~
-
-  - name: router_z2
-    instances: 1
-    networks:
-      - name: cf2
         static_ips: ~
 
   - name: loggregator_z1
@@ -186,54 +133,27 @@ jobs:
     networks:
       - name: cf1
 
-  - name: loggregator_z2
-    instances: 0
-    networks:
-      - name: cf2
-
   - name: doppler_z1
     instances: 1
     networks:
       - name: cf1
-
-  - name: doppler_z2
-    instances: 1
-    networks:
-      - name: cf2
 
   - name: loggregator_trafficcontroller_z1
     instances: 1
     networks:
       - name: cf1
 
-  - name: loggregator_trafficcontroller_z2
-    instances: 1
-    networks:
-      - name: cf2
-
   - name: consul_z1
-    instances: 2
+    instances: 1
     networks:
       - name: cf1
-        static_ips: (( static_ips(27, 28, 29) ))
-
-  - name: consul_z2
-    instances: 1
-    networks:
-      - name: cf2
         static_ips: (( static_ips(27, 28, 29) ))
 
   - name: etcd_z1
-    instances: 2
+    instances: 1
     networks:
       - name: cf1
         static_ips: (( static_ips(10, 25) ))
-
-  - name: etcd_z2
-    instances: 1
-    networks:
-      - name: cf2
-        static_ips: (( static_ips(9) ))
 
   - name: smoke_tests
     instances: 1

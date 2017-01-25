@@ -2,7 +2,7 @@ name: (( meta.environment ))
 
 director_uuid: (( merge ))
 
-default_releases: [{name: cf, version: latest}]
+default_releases: [{name: cf, version: 249}]
 releases: (( merge || default_releases ))
 
 networks: (( merge ))
@@ -10,7 +10,7 @@ networks: (( merge ))
 jobs:
   - name: consul_z1
     templates: (( merge || meta.consul_templates ))
-    instances: 2
+    instances: 1
     persistent_disk: 1024
     resource_pool: small_z1
     default_networks:
@@ -26,24 +26,6 @@ jobs:
       metron_agent:
         zone: z1
 
-  - name: consul_z2
-    templates: (( merge || meta.consul_templates ))
-    instances: 1
-    persistent_disk: 1024
-    resource_pool: small_z2
-    default_networks:
-    - name: cf2
-    networks: (( merge || default_networks ))
-    update:
-      serial: true
-      max_in_flight: 1
-    properties:
-      consul:
-        agent:
-          mode: server
-      metron_agent:
-        zone: z2
-
   - name: nats_z1
     templates: (( merge || meta.nats_templates ))
     instances: 1
@@ -56,21 +38,9 @@ jobs:
         zone: z1
     update: (( merge || empty_hash ))
 
-  - name: nats_z2
-    templates: (( merge || meta.nats_templates ))
-    instances: 1
-    resource_pool: medium_z2
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      metron_agent:
-        zone: z2
-    update: (( merge || empty_hash ))
-
   - name: etcd_z1
     templates: (( merge || meta.etcd_templates ))
-    instances: 2
+    instances: 1
     persistent_disk: 10024
     resource_pool: large_z1
     default_networks:
@@ -88,25 +58,6 @@ jobs:
       serial: true
       max_in_flight: 1
 
-  - name: etcd_z2
-    templates: (( merge || meta.etcd_templates ))
-    instances: 1
-    persistent_disk: 10024
-    resource_pool: large_z2
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      metron_agent:
-        zone: z2
-      consul:
-        agent:
-          services:
-            etcd:
-              name: cf-etcd
-    update:
-      serial: true
-      max_in_flight: 1
 
   - name: stats_z1
     templates: (( merge || meta.stats_templates ))
@@ -189,29 +140,9 @@ jobs:
         routes: (( merge || meta.uaa_routes ))
       uaa:
         proxy:
-          servers: (( merge || jobs.router_z1.networks.cf1.static_ips jobs.router_z2.networks.cf2.static_ips || nil ))
+          servers: (( merge || jobs.router_z1.networks.cf1.static_ips || nil ))
     update: (( merge || empty_hash ))
 
-  - name: uaa_z2
-    templates: (( merge || meta.uaa_templates ))
-    instances: 1
-    resource_pool: medium_z2
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      consul:
-        agent:
-          services:
-            uaa: {}
-      metron_agent:
-        zone: z2
-      route_registrar:
-        routes: (( merge || meta.uaa_routes ))
-      uaa:
-        proxy:
-          servers: (( merge || jobs.router_z1.networks.cf1.static_ips jobs.router_z2.networks.cf2.static_ips || nil ))
-    update: (( merge || empty_hash ))
 
   - name: api_z1
     templates: (( merge || meta.api_templates ))
@@ -227,25 +158,6 @@ jobs:
           services: (( merge || meta.api_consul_services ))
       metron_agent:
         zone: z1
-      route_registrar:
-        routes: (( merge || meta.api_routes ))
-      nfs_server: (( meta.nfs_server ))
-    update: (( merge || empty_hash ))
-
-  - name: api_z2
-    templates: (( merge || meta.api_templates ))
-    instances: 1
-    resource_pool: large_z2
-    persistent_disk: 0
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      consul:
-        agent:
-          services: (( merge || meta.api_consul_services ))
-      metron_agent:
-        zone: z2
       route_registrar:
         routes: (( merge || meta.api_routes ))
       nfs_server: (( meta.nfs_server ))
@@ -278,20 +190,6 @@ jobs:
       nfs_server: (( meta.nfs_server ))
     update: (( merge || empty_hash ))
 
-  - name: api_worker_z2
-    templates: (( merge || meta.api_worker_templates ))
-    instances: 1
-    resource_pool: small_z2
-    persistent_disk: 0
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      metron_agent:
-        zone: z2
-      nfs_server: (( meta.nfs_server ))
-    update: (( merge || empty_hash ))
-
   - name: hm9000_z1
     templates: (( merge || meta.hm9000_templates ))
     instances: 1
@@ -310,23 +208,6 @@ jobs:
         routes: (( merge || meta.hm9000_routes ))
     update: (( merge || empty_hash ))
 
-  - name: hm9000_z2
-    templates: (( merge || meta.hm9000_templates ))
-    instances: 1
-    resource_pool: medium_z2
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      consul:
-        agent:
-          services:
-            hm9000: {}
-      metron_agent:
-        zone: z2
-      route_registrar:
-        routes: (( merge || meta.hm9000_routes ))
-    update: (( merge || empty_hash ))
 
   - name: runner_z1
     templates: (( merge || meta.dea_templates ))
@@ -340,30 +221,6 @@ jobs:
         zone: (( merge || "z1" ))
       metron_agent:
         zone: z1
-      consul:
-        agent:
-          services:
-            dea:
-              check:
-                name: dns_health_check
-                script: /var/vcap/jobs/dea_next/bin/dns_health_check
-                interval: 5m
-                status: passing
-    update:
-      max_in_flight: 1
-
-  - name: runner_z2
-    templates: (( merge || meta.dea_templates ))
-    instances: 1
-    resource_pool: runner_z2
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      dea_next:
-        zone: (( merge || "z2" ))
-      metron_agent:
-        zone: z2
       consul:
         agent:
           services:
@@ -390,19 +247,6 @@ jobs:
         zone: z1
     update: (( merge || empty_hash ))
 
-  - name: loggregator_z2
-    templates: (( merge || meta.loggregator_templates ))
-    instances: 0
-    resource_pool: medium_z2
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      doppler:
-        zone: z2
-      metron_agent:
-        zone: z2
-    update: (( merge || empty_hash ))
 
   - name: doppler_z1
     templates: (( merge || meta.loggregator_templates ))
@@ -425,26 +269,6 @@ jobs:
               - z1
     update: (( merge || empty_hash ))
 
-  - name: doppler_z2
-    templates: (( merge || meta.loggregator_templates ))
-    instances: 1
-    resource_pool: medium_z2
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      doppler:
-        zone: z2
-      metron_agent:
-        zone: z2
-      consul:
-        agent:
-          services:
-            doppler:
-              name: doppler
-              tags:
-              - z2
-    update: (( merge || empty_hash ))
 
   - name: loggregator_trafficcontroller_z1
     templates: (( merge || meta.loggregator_trafficcontroller_templates ))
@@ -471,31 +295,6 @@ jobs:
       serial: true
       max_in_flight: 1
 
-  - name: loggregator_trafficcontroller_z2
-    templates: (( merge || meta.loggregator_trafficcontroller_templates ))
-    instances: 1
-    resource_pool: small_z2
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      loggregator:
-        uaa:
-          client_secret: (( .properties.uaa.clients.doppler.secret ))
-      traffic_controller:
-        zone: z2
-      consul:
-        agent:
-          services:
-            loggregator_trafficcontroller: {}
-      metron_agent:
-        zone: z2
-      route_registrar:
-        routes: (( merge || meta.loggregator_trafficcontroller_routes ))
-    update:
-      serial: true
-      max_in_flight: 1
-
   - name: router_z1
     templates: (( merge || meta.router_templates ))
     instances: 1
@@ -512,22 +311,6 @@ jobs:
         zone: z1
     update: (( merge || empty_hash ))
 
-  - name: router_z2
-    templates: (( merge || meta.router_templates ))
-    instances: 1
-    resource_pool: router_z2
-    default_networks:
-      - name: cf2
-    networks: (( merge || default_networks ))
-    properties:
-      consul:
-        agent:
-          services:
-            gorouter: {}
-      metron_agent:
-        zone: z2
-    update: (( merge || empty_hash ))
-
   - name: ha_proxy_z1
     templates: (( merge || meta.ha_proxy_templates ))
     instances: 0
@@ -538,7 +321,7 @@ jobs:
     properties:
       ha_proxy:
       router:
-        servers: (( merge || jobs.router_z1.networks.cf1.static_ips jobs.router_z2.networks.cf2.static_ips || nil ))
+        servers: (( merge || jobs.router_z1.networks.cf1.static_ips || nil ))
       metron_agent:
         zone: z1
     update: (( merge || empty_hash ))
@@ -616,14 +399,14 @@ properties:
     user: (( merge ))
     password: (( merge ))
     port: 4222
-    machines: (( merge || jobs.nats_z1.networks.cf1.static_ips jobs.nats_z2.networks.cf2.static_ips ))
+    machines: (( merge || jobs.nats_z1.networks.cf1.static_ips ))
     debug: false
     trace: false
     monitor_port: 0
     prof_port: 0
 
   etcd:
-    machines: (( merge || jobs.etcd_z1.networks.cf1.static_ips jobs.etcd_z2.networks.cf2.static_ips ))
+    machines: (( merge || jobs.etcd_z1.networks.cf1.static_ips ))
     require_ssl: (( merge || false ))
     peer_require_ssl: (( .properties.etcd.require_ssl ))
     advertise_urls_dns_suffix: cf-etcd.service.cf.internal
@@ -633,8 +416,6 @@ properties:
     cluster:
       - instances: (( jobs.etcd_z1.instances ))
         name: etcd_z1
-      - instances: (( jobs.etcd_z2.instances ))
-        name: etcd_z2
     peer_ca_cert: (( merge || "" ))
     peer_cert: (( merge || "" ))
     peer_key: (( merge || "" ))
@@ -1191,32 +972,15 @@ resource_pools:
     cloud_properties: (( merge ))
     env: (( merge || meta.default_env ))
 
-  - name: small_z2
-    network: cf2
-    stemcell: (( meta.stemcell ))
-    cloud_properties: (( merge ))
-    env: (( merge || meta.default_env ))
-
   - name: medium_z1
     network: cf1
     stemcell: (( meta.stemcell ))
     cloud_properties: (( merge ))
     env: (( merge || meta.default_env ))
 
-  - name: medium_z2
-    network: cf2
-    stemcell: (( meta.stemcell ))
-    cloud_properties: (( merge ))
-    env: (( merge || meta.default_env ))
 
   - name: large_z1
     network: cf1
-    stemcell: (( meta.stemcell ))
-    cloud_properties: (( merge ))
-    env: (( merge || meta.default_env ))
-
-  - name: large_z2
-    network: cf2
     stemcell: (( meta.stemcell ))
     cloud_properties: (( merge ))
     env: (( merge || meta.default_env ))
@@ -1227,20 +991,8 @@ resource_pools:
     cloud_properties: (( merge ))
     env: (( merge || meta.default_env ))
 
-  - name: runner_z2
-    network: cf2
-    stemcell: (( meta.stemcell ))
-    cloud_properties: (( merge ))
-    env: (( merge || meta.default_env ))
-
   - name: router_z1
     network: (( merge || "cf1" ))
-    stemcell: (( meta.stemcell ))
-    cloud_properties: (( merge ))
-    env: (( merge || meta.default_env ))
-
-  - name: router_z2
-    network: (( merge || "cf2" ))
     stemcell: (( meta.stemcell ))
     cloud_properties: (( merge ))
     env: (( merge || meta.default_env ))
@@ -1290,11 +1042,10 @@ meta:
   loggregator_release_name: (( releases.loggregator.name || "cf" ))
   uaa_release_name: (( releases.uaa.name || "cf" ))
 
-  consul_servers: (( merge || jobs.consul_z1.networks.cf1.static_ips jobs.consul_z2.networks.cf2.static_ips ))
+  consul_servers: (( merge || jobs.consul_z1.networks.cf1.static_ips ))
 
   nfs_client_ranges:
     - (( .networks.cf1.subnets.[0].range || nil ))
-    - (( .networks.cf2.subnets.[0].range || nil ))
 
   nfs_server:
     address: (( merge || jobs.nfs_z1.networks.cf1.static_ips.[0] || nil ))
